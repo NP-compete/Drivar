@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Drivar</string>
+
+    <string name="feedback">Leave Feedback</string>
+    <string name="speedo">Km/H</string>
+    <string name="km_h">Km/H</string>
+    <string name="speedometer">speedometer</string>
+    <string name="speed_limit">SPEED LIMIT</string>
+</resources>
