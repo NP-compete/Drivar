@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     View recommendedSpeed;
     private int lmDistance = 50;
     private int lmTime = 3000;
+    private int speedLimit = 30;
 
     public double scale(double valueIn, double baseMin, double baseMax, double limitMin, double limitMax) {
         return ((limitMax - limitMin) * (valueIn - baseMin) / (baseMax - baseMin)) + limitMin;
@@ -117,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
                 String speed = String.valueOf((int) Math.round(location.getSpeed()*3.6));
                 text.setText(speed);
 
-                double scaledSpeed = scale((int) Math.round(location.getSpeed()*3.6), 0, 150, 1, 2.5);
+                double scaledSpeed = scale((int) Math.round(location.getSpeed()*3.6), 0, speedLimit, 1, 2.5);
 
                 currentSpeedView.animate().scaleX((float) scaledSpeed).scaleY((float) scaledSpeed).setDuration(250);
 
@@ -248,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
 
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject jsonPart = jsonArray.getJSONObject(i);
-                        int speedLimit = (int) Math.round(jsonPart.getDouble("speedLimit")*3.6);
+                        speedLimit = (int) Math.round(jsonPart.getDouble("speedLimit")*3.6);
                         speed.setText(String.valueOf(speedLimit));
                         Log.i("JSON Speed Limit", String.valueOf((speedLimit)));
                     }
