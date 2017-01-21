@@ -3,4 +3,9 @@
     <color name="colorPrimary">#202020</color>
     <color name="colorPrimaryDark">#000000</color>
     <color name="colorAccent">#FF80CBC4</color>
+
+    <color name="colorSpeedLimit">#ff192f</color>
+    <color name="colorNotSpeeding">#00a9fc</color>
+    <color name="colorRecommended">#ff9900</color>
+
 </resources>

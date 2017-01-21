@@ -4,6 +4,10 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ShapeDrawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -47,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
     private int lmDistance = 50;
     private int lmTime = 3000;
     private int speedLimit = 30;
+    private int usersSpeed = 0;
+    private int drivingRecommendedSpeed = 30;
 
     public double scale(double valueIn, double baseMin, double baseMax, double limitMin, double limitMax) {
         return ((limitMax - limitMin) * (valueIn - baseMin) / (baseMax - baseMin)) + limitMin;
@@ -74,9 +80,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         text = (TextView) findViewById(R.id.text);
         speed = (TextView) findViewById(R.id.speed);
-        currentSpeedView = (View) findViewById(R.id.currentSpeed);
-        recommendedSpeed = (View) findViewById(R.id.recommendedSpeed);
-        speedLimitSignView = (View) findViewById(R.id.speedLimitSignView);
+        currentSpeedView = findViewById(R.id.currentSpeed);
+        recommendedSpeed = findViewById(R.id.recommendedSpeed);
+        speedLimitSignView = findViewById(R.id.speedLimitSignView);
 
         Context context = getApplicationContext();
         currentSpeedView.setOnTouchListener(new OnSwipeTouchListener(context) {
@@ -116,11 +122,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onLocationChanged(Location location) {
                 String speed = String.valueOf((int) Math.round(location.getSpeed()*3.6));
+                usersSpeed = (int) Math.round(location.getSpeed()*3.6);
                 text.setText(speed);
 
                 double scaledSpeed = scale((int) Math.round(location.getSpeed()*3.6), 0, speedLimit, 1, 2.5);
 
                 currentSpeedView.animate().scaleX((float) scaledSpeed).scaleY((float) scaledSpeed).setDuration(250);
+
+                calculateUIColor();
 
                 String lat = String.valueOf(location.getLatitude());
                 String lng = String.valueOf(location.getLongitude());
@@ -145,9 +154,11 @@ public class MainActivity extends AppCompatActivity {
                 if(dayNight.mState == 1) {
                     Log.i("DAY / NIGHT", "it is night");
                     recommendedSpeed.animate().alpha(255).setDuration(10000);
+                    drivingRecommendedSpeed = (int) (speedLimit * 0.9);
                 } else {
                     Log.i("DAY / NIGHT", "it is day");
                     recommendedSpeed.animate().alpha(0).setDuration(10000);
+                    drivingRecommendedSpeed = speedLimit;
                 }
             }
 
@@ -184,6 +195,38 @@ public class MainActivity extends AppCompatActivity {
 
         Toast toast = Toast.makeText(context, text, duration);
         toast.show();
+    }
+
+    private void calculateUIColor() {
+
+        if(usersSpeed >= drivingRecommendedSpeed){
+            Drawable background = currentSpeedView.getBackground();
+            if (background instanceof ShapeDrawable) {
+                ((ShapeDrawable)background).getPaint().setColor(getResources().getColor(R.color.colorRecommended));
+            } else if (background instanceof GradientDrawable) {
+                ((GradientDrawable)background).setColor(getResources().getColor(R.color.colorRecommended));
+            } else if (background instanceof ColorDrawable) {
+                ((ColorDrawable)background).setColor(getResources().getColor(R.color.colorRecommended));
+            }
+        } else if(usersSpeed > speedLimit){
+            Drawable background = currentSpeedView.getBackground();
+            if (background instanceof ShapeDrawable) {
+                ((ShapeDrawable)background).getPaint().setColor(getResources().getColor(R.color.colorSpeedLimit));
+            } else if (background instanceof GradientDrawable) {
+                ((GradientDrawable)background).setColor(getResources().getColor(R.color.colorSpeedLimit));
+            } else if (background instanceof ColorDrawable) {
+                ((ColorDrawable)background).setColor(getResources().getColor(R.color.colorSpeedLimit));
+            }
+        } else if(usersSpeed > speedLimit && usersSpeed > drivingRecommendedSpeed){
+            Drawable background = currentSpeedView.getBackground();
+            if (background instanceof ShapeDrawable) {
+                ((ShapeDrawable)background).getPaint().setColor(getResources().getColor(R.color.colorNotSpeeding));
+            } else if (background instanceof GradientDrawable) {
+                ((GradientDrawable)background).setColor(getResources().getColor(R.color.colorNotSpeeding));
+            } else if (background instanceof ColorDrawable) {
+                ((ColorDrawable)background).setColor(getResources().getColor(R.color.colorNotSpeeding));
+            }
+        }
     }
 
     @Override
