@@ -40,7 +40,7 @@ import static java.lang.Math.round;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "ALLEN WIXTED: DRIVAR";
     LocationManager locationManager;
     LocationListener locationListener;
     TextView text;
@@ -48,11 +48,13 @@ public class MainActivity extends AppCompatActivity {
     View currentSpeedView;
     View speedLimitSignView;
     View recommendedSpeed;
-    private int lmDistance = 50;
-    private int lmTime = 3000;
+    private int lmDistance = 5;
+    private int lmTime = 250;
     private int speedLimit = 30;
     private int usersSpeed = 0;
     private int drivingRecommendedSpeed = 30;
+    private boolean weatherBad = false;
+    private double metricImperial = 3.6;
 
     public double scale(double valueIn, double baseMin, double baseMax, double limitMin, double limitMax) {
         return ((limitMax - limitMin) * (valueIn - baseMin) / (baseMax - baseMin)) + limitMin;
@@ -67,7 +69,6 @@ public class MainActivity extends AppCompatActivity {
             //make sure we have explicit permission for this particular service
             if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION + Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED) {
                 //parameters include provider, minimum time before next request, minimum distance travelled, the listener
-                //locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 150, locationListener);
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, lmTime, lmDistance, locationListener);
             }
         }
@@ -134,9 +135,9 @@ public class MainActivity extends AppCompatActivity {
                 String lat = String.valueOf(location.getLatitude());
                 String lng = String.valueOf(location.getLongitude());
 
+                //Speed URL
                 SpeedLimitRequest task = new SpeedLimitRequest();
-
-                String updatedURL = "https://route.cit.api.here.com/routing/7.2/getlinkinfo.json?waypoint=" +
+                String speedURL = "https://route.cit.api.here.com/routing/7.2/getlinkinfo.json?waypoint=" +
                         lat +
                         "%2C" +
                         lng +
@@ -144,21 +145,40 @@ public class MainActivity extends AppCompatActivity {
                         "F95P9Ir1dbtspwKRTKtE" +
                         "&app_code=" +
                         "VtVWqzE5hlQfoozVs1jujA";
-                Log.i(TAG, updatedURL);
-                task.execute(String.valueOf(updatedURL));
+                task.execute(String.valueOf(speedURL));
+
+                //Weather URL
+                WeatherRequest weatherRequest = new WeatherRequest();
+                String weatherURL = "http://api.openweathermap.org/data/2.5/weather?lat=" + lat +
+                        "&lon=" + lng +
+                        "&appid=b19ba30c78778b7a632b1c8c15c51747";
+                Log.i(TAG, weatherURL);
+                weatherRequest.execute(weatherURL);
 
                 TwilightCalculator dayNight = new TwilightCalculator();
                 long time= System.currentTimeMillis();
                 dayNight.calculateTwilight(time, location.getLatitude(), location.getLongitude());
 
                 if(dayNight.mState == 1) {
-                    Log.i("DAY / NIGHT", "it is night");
+                    Log.i("DAY / NIGHT", "it is night and clear");
                     recommendedSpeed.animate().alpha(255).setDuration(10000);
+                    recommendedSpeed.animate().scaleX((float) 0.9).scaleY((float) 0.9).setDuration(300);
                     drivingRecommendedSpeed = (int) (speedLimit * 0.9);
-                } else {
-                    Log.i("DAY / NIGHT", "it is day");
+                } else if (dayNight.mState == 0) {
+                    Log.i("DAY / NIGHT", "it is day and clear");
                     recommendedSpeed.animate().alpha(0).setDuration(10000);
+                    recommendedSpeed.animate().scaleX((float) 1.0).scaleY((float) 1.0).setDuration(300);
                     drivingRecommendedSpeed = speedLimit;
+                } else if (dayNight.mState == 1 && weatherBad == true){
+                    Log.i("DAY / NIGHT", "it is night and bad weather");
+                    recommendedSpeed.animate().alpha(255).setDuration(10000);
+                    recommendedSpeed.animate().scaleX((float) 0.8).scaleY((float) 0.8).setDuration(300);
+                    drivingRecommendedSpeed = (int) (speedLimit * 0.8);
+                } else if (dayNight.mState == 0 && weatherBad == true){
+                    Log.i("DAY / NIGHT", "it is day and bad weather");
+                    recommendedSpeed.animate().alpha(255).setDuration(10000);
+                    recommendedSpeed.animate().scaleX((float) 0.9).scaleY((float) 0.9).setDuration(300);
+                    drivingRecommendedSpeed = (int) (speedLimit * 0.9);
                 }
             }
 
@@ -182,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
         if(Build.VERSION.SDK_INT < 23){ //then get location as already accepted at install
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, lmTime, lmDistance, locationListener);
         } else {
-            //if we dont have permission then ask
+            //if we don't have permission then ask
             if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             } else { //if we already do then get location
@@ -190,7 +210,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        CharSequence text = "Swipe Left for Normal, Right for HUD Mode";
+        CharSequence text = "Swipe Left and Right for Mirrored Mode";
         int duration = Toast.LENGTH_LONG;
 
         Toast toast = Toast.makeText(context, text, duration);
@@ -199,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void calculateUIColor() {
 
-        if(usersSpeed >= drivingRecommendedSpeed){
+        if(usersSpeed >= drivingRecommendedSpeed && usersSpeed <= speedLimit){
             Drawable background = currentSpeedView.getBackground();
             if (background instanceof ShapeDrawable) {
                 ((ShapeDrawable)background).getPaint().setColor(getResources().getColor(R.color.colorRecommended));
@@ -217,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (background instanceof ColorDrawable) {
                 ((ColorDrawable)background).setColor(getResources().getColor(R.color.colorSpeedLimit));
             }
-        } else if(usersSpeed > speedLimit && usersSpeed > drivingRecommendedSpeed){
+        } else if(usersSpeed < speedLimit && usersSpeed < drivingRecommendedSpeed){
             Drawable background = currentSpeedView.getBackground();
             if (background instanceof ShapeDrawable) {
                 ((ShapeDrawable)background).getPaint().setColor(getResources().getColor(R.color.colorNotSpeeding));
@@ -293,8 +313,14 @@ public class MainActivity extends AppCompatActivity {
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject jsonPart = jsonArray.getJSONObject(i);
                         speedLimit = (int) Math.round(jsonPart.getDouble("speedLimit")*3.6);
-                        speed.setText(String.valueOf(speedLimit));
-                        Log.i("JSON Speed Limit", String.valueOf((speedLimit)));
+
+                        if(speedLimit != 0){
+                            speed.setText(String.valueOf(speedLimit));
+                        } else {
+                            speed.setText("?");
+                        }
+
+                        //Log.i("JSON Speed Limit", String.valueOf((speedLimit)));
                     }
 
                 } catch (JSONException e){
@@ -312,4 +338,94 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private class WeatherRequest extends AsyncTask<String, Void, String>{
+
+        @Override
+        protected String doInBackground(String... urls) {
+            String result = "";
+            URL url;
+            HttpURLConnection urlConnection = null;
+
+            try {
+                url = new URL(urls[0]);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                InputStream in = urlConnection.getInputStream();
+                InputStreamReader reader = new InputStreamReader(in);
+
+                int data = reader.read();
+                while (data != -1){
+                    char current = (char) data;
+                    result += current;
+                    data = reader.read();
+                }
+                //Log.i(TAG, result);
+
+                return result;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        //called when the do in background has completed and is passed the return
+        //do in background cant interact with the UI, this can
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            try {
+                JSONObject jsonObject = new JSONObject(result);
+                String response = jsonObject.getString("weather");
+
+                try {
+                    JSONArray jsonArray = new JSONArray(response);
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject jsonPart = jsonArray.getJSONObject(i);
+                        int code = jsonPart.getInt("id");
+
+                        if (code > 799 && code < 899) {
+                            weatherBad = false;
+                        } else {
+                            weatherBad = true;
+                        }
+                    }
+
+                } catch (JSONException e) {
+                    Context context = getApplicationContext();
+                    CharSequence text = "Error getting Weather Data. Try Updating";
+                    int duration = Toast.LENGTH_LONG;
+
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.show();
+                }
+            } catch (JSONException e) {
+
+            }
+
+            try {
+                JSONObject jsonObject = new JSONObject(result);
+                String response = jsonObject.getString("sys");
+
+                try{
+                    JSONObject jsonPart = new JSONObject(response);
+                    String country = jsonPart.getString("country");
+                    Log.i(TAG, country);
+
+                    if(country.equals("US") || country.equals("UK")){
+                        metricImperial = 2.23;
+                    } else {
+                        metricImperial = 3.6;
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                } catch (JSONException e) {
+                     e.printStackTrace();
+            }
+        }
+    }
 }
+
