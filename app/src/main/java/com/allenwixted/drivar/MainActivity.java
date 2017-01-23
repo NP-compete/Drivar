@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     View currentSpeedView;
     View speedLimitSignView;
     View recommendedSpeed;
+    View speedLimitCircle;
     private int lmDistance = 5;
     private int lmTime = 250;
     private int speedLimit = 30;
@@ -84,7 +85,26 @@ public class MainActivity extends AppCompatActivity {
         currentSpeedView = findViewById(R.id.currentSpeed);
         recommendedSpeed = findViewById(R.id.recommendedSpeed);
         speedLimitSignView = findViewById(R.id.speedLimitSignView);
+        speedLimitCircle = findViewById(R.id.speedLimitCircle);
 
+        //Get screen dimensions
+        Configuration configuration = this.getResources().getConfiguration();
+        int smallestScreenWidthDp = configuration.smallestScreenWidthDp; //The smallest screen size an application will see in normal operation, corresponding to smallest screen width resource qualifier.
+        Log.i(TAG, String.valueOf(smallestScreenWidthDp));
+
+        int scaledScreenWidthForCSV = (int) scale(120/320,0,320,0,smallestScreenWidthDp);
+        int scaledScreenWidthForRSV = (int) scale(1,0,320,0,smallestScreenWidthDp);
+
+        currentSpeedView.setScaleX(scaledScreenWidthForCSV);
+        currentSpeedView.setScaleY(scaledScreenWidthForCSV);
+
+        recommendedSpeed.setScaleX(scaledScreenWidthForRSV);
+        recommendedSpeed.setScaleY(scaledScreenWidthForRSV);
+
+        speedLimitCircle.setScaleX(scaledScreenWidthForRSV);
+        speedLimitCircle.setScaleY(scaledScreenWidthForRSV);
+
+        //Swipe recognition
         Context context = getApplicationContext();
         currentSpeedView.setOnTouchListener(new OnSwipeTouchListener(context) {
             @Override
@@ -212,7 +232,6 @@ public class MainActivity extends AppCompatActivity {
 
         CharSequence text = "Swipe Left and Right for Mirrored Mode";
         int duration = Toast.LENGTH_LONG;
-
         Toast toast = Toast.makeText(context, text, duration);
         toast.show();
     }

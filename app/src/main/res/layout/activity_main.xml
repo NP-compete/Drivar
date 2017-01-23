@@ -53,7 +53,6 @@
         android:layout_width="320dp"
         android:layout_height="320dp"
         android:layout_centerInParent="true"
-
         android:background="@drawable/speedlimitcircle"
         android:id="@+id/speedLimitCircle"/>
 
